@@ -41,6 +41,7 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
     @Override
     public void onCreate() {
         super.onCreate();
+
         initGoogleClient();
     }
 
@@ -50,14 +51,18 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
                 .addConnectionCallbacks(this)
                 .build();
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+        Log.e(LOG_LOCATION, "initGoogleClient");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(LOG_LOCATION, " Log.e(LOG_LOCATION, \"onStartCommand\");");
         if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
+        Log.e(LOG_LOCATION, "onStartCommand");
         return START_STICKY;
+
     }
 
     @SuppressLint("MissingPermission")
@@ -65,12 +70,14 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
         setLocationReguestParams();
         if (PermissionUtils.isLocationPermissionGranted(getApplicationContext())) {
             mFusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+            Log.e(LOG_LOCATION, "startLocationUpdates");
         }
     }
 
     private void stopLocationUpdates() {
         mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
         stopSelf();
+        Log.e(LOG_LOCATION, "stopLocationUpdates");
     }
 
     private void setLocationReguestParams() {
@@ -78,6 +85,7 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
         mLocationRequest.setInterval(INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        Log.e(LOG_LOCATION, "setLocationReguestParams");
 
     }
 
@@ -92,6 +100,7 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         startLocationUpdates();
+        Log.e(LOG_LOCATION, "onConnected");
     }
 
     @Override
@@ -112,6 +121,7 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
             stopLocationUpdates();
+            Log.i(LOG_LOCATION, "onDestroy");
         }
         super.onDestroy();
     }
