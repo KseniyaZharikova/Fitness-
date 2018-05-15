@@ -86,18 +86,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void saveRoad(Location location) {
         mWalkedList.add(new LatLng(location.getLatitude(), location.getLongitude()));
         drawRoute(mWalkedList);
-//        if (startLocation == null) {
-//            startLocation = new LatLng(location.getLatitude(), location.getLongitude());
-//        } else {
-//            if (endLocation == null) {
-//                endLocation = new LatLng(location.getLatitude(), location.getLongitude());
-//            } else {
-//                mWalkedList.add(endLocation);
-//                endLocation = new LatLng(location.getLatitude(), location.getLongitude());
-//                drawRoute(mWalkedList);
-//            }
-//
-
         }
 
 
