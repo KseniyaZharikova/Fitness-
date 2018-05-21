@@ -1,4 +1,4 @@
-package com.example.kseniya.projectservicetrackinglocation;
+package com.example.kseniya.projectservicetrackinglocation.utils;
 
 import android.app.Activity;
 import android.content.Context;

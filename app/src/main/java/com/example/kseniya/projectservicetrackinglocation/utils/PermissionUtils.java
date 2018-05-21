@@ -1,4 +1,4 @@
-package com.example.kseniya.projectservicetrackinglocation;
+package com.example.kseniya.projectservicetrackinglocation.utils;
 
 import android.Manifest;
 import android.app.Activity;
@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
+
+import com.example.kseniya.projectservicetrackinglocation.utils.AppConstants;
 
 
 public final class PermissionUtils {

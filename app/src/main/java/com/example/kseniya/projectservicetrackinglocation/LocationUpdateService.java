@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.example.kseniya.projectservicetrackinglocation.utils.PermissionUtils;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -25,7 +26,7 @@ import org.greenrobot.eventbus.EventBus;
  */
 public class LocationUpdateService extends Service implements GoogleApiClient.ConnectionCallbacks, LocationListener {
     private static final int INTERVAL = 10000;
-    private static final int FASTEST_INTERVAL = 30000;
+    private static final int FASTEST_INTERVAL = 10000;
     private final String LOG_LOCATION = " SERVICE_LOCATION";
     private GoogleApiClient mGoogleApiClient;
     private FusedLocationProviderClient mFusedLocationProviderClient;
