@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'realm-android'
 
 android {
     compileSdkVersion 26
@@ -41,4 +42,5 @@ dependencies {
     implementation("com.mikepenz:materialdrawer:6.0.7@aar") {
         transitive = true
     }
+
 }

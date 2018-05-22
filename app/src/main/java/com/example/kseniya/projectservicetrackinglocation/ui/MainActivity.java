@@ -1,5 +1,6 @@
 package com.example.kseniya.projectservicetrackinglocation.ui;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.kseniya.projectservicetrackinglocation.LocationUpdateService;
 import com.example.kseniya.projectservicetrackinglocation.R;
+import com.example.kseniya.projectservicetrackinglocation.models.InformationModel;
 import com.example.kseniya.projectservicetrackinglocation.utils.AppConstants;
 import com.example.kseniya.projectservicetrackinglocation.utils.PermissionUtils;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -53,6 +55,8 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
+import io.realm.Realm;
+
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
     private ArrayList<Location> mWalkedList = new ArrayList<>();
@@ -63,7 +67,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Location mStartLocation;
     private long lastPause;
     Chronometer chronometer;
-    Button start, stop;
+    Button start, stop, save;
+    private Realm mRealm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,16 +76,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
         Toolbar myToolBar = findViewById(R.id.myToolBar);
         setSupportActionBar(myToolBar);
-        Location location = new Location("");
-        location.setLatitude(42.874);
-        location.setLongitude(74.5698);
-        mStartLocation = location;
+        mRealm =  Realm.getDefaultInstance();
         distance = findViewById(R.id.distance);
         chronometer = findViewById(R.id.chronometer);
         start = findViewById(R.id.start);
+        save = findViewById(R.id.save);
         stop = findViewById(R.id.stop);
         start.setOnClickListener(this);
         stop.setOnClickListener(this);
+        save.setOnClickListener(this);
         initMap();
 
         AccountHeader headerResult = new AccountHeaderBuilder()
@@ -88,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .withHeaderBackground(R.drawable.run_image)
                 .build();
         new DrawerBuilder().withActivity(this).build();
-        PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("My result")
+        final PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName("My result")
                 .withSelectedColor(getResources().getColor(R.color.material_drawer_dark_background))
                 .withTextColor(getResources().getColor(R.color.white))
                 .withSelectedTextColor(getResources().getColor(R.color.white));
@@ -101,6 +105,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .withActivity(this)
                 .withSliderBackgroundColor(getResources().getColor(R.color.material_drawer_dark_background))
                 .withToolbar(myToolBar)
+                .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                    @Override
+                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                            Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                            startActivity(intent);
+                        return false;
+                    }
+                })
                 .withAccountHeader(headerResult)
                 .addDrawerItems(
                         item1,
@@ -168,9 +180,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setEnabled(true);
                 stop.setEnabled(false);
                 break;
+            case R.id.save:
+                mRealm.beginTransaction();
+                InformationModel model = mRealm.createObject(InformationModel.class);
+                model.setDistance(distance.getText().toString());
+                model.setTime((chronometer.getBase()));
+                mRealm.commitTransaction();
+                break;
         }
-    }
 
+    }
 
     private void saveRoad(Location location) {
         mWalkedList.add(location);
@@ -181,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
         enableMyLocation();
+
 
     }
 
@@ -216,7 +236,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void enableMyLocation() {
         if (PermissionUtils.checkLocationPermission(this) && mGoogleMap != null) {
             mGoogleMap.setMyLocationEnabled(true);
-            mGoogleMap.setMaxZoomPreference(18);
             mGoogleMap.setMinZoomPreference(15);
         }
     }
