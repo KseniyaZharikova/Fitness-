@@ -1,14 +1,20 @@
 package com.example.kseniya.projectservicetrackinglocation;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.kseniya.projectservicetrackinglocation.utils.PermissionUtils;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,6 +24,8 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -32,17 +40,23 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private LocationRequest mLocationRequest;
 
+    public class LocalBinder extends Binder {
+        public LocationUpdateService getService() {
+            return LocationUpdateService.this;
+        }
+
+
+    }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return new LocalBinder();
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-
         initGoogleClient();
     }
 
@@ -67,29 +81,36 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
     }
 
     @SuppressLint("MissingPermission")
-    private void startLocationUpdates() {
+    public void startLocationUpdates() {
         setLocationReguestParams();
         if (PermissionUtils.isLocationPermissionGranted(getApplicationContext())) {
-            mFusedLocationProviderClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+            mFusedLocationProviderClient.requestLocationUpdates(mLocationRequest,
+                    mLocationCallback, Looper.myLooper());
             Log.e(LOG_LOCATION, "startLocationUpdates");
         }
     }
 
-    private void stopLocationUpdates() {
+    public void stopLocationUpdates() {
         mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback);
         stopSelf();
         Log.e(LOG_LOCATION, "stopLocationUpdates");
     }
 
+    public void getLastLocation(OnCompleteListener<Location> onCompleteListener) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            //  Log.e(LOG_LOCATION, "stopLocationUpdates");
+            mFusedLocationProviderClient.getLastLocation().addOnCompleteListener(onCompleteListener);
+        }
+    }
     private void setLocationReguestParams() {
         mLocationRequest = LocationRequest.create();
         mLocationRequest.setInterval(INTERVAL);
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         Log.e(LOG_LOCATION, "setLocationReguestParams");
-
     }
-
     final LocationCallback mLocationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
@@ -100,7 +121,7 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        startLocationUpdates();
+
         Log.e(LOG_LOCATION, "onConnected");
     }
 
@@ -118,7 +139,6 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
 
     @Override
     public void onDestroy() {
-
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
             stopLocationUpdates();

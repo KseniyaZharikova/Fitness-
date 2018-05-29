@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">ProjectServiceTrackingLocation</string>
     <string name="google_api_key">AIzaSyDsphofqRTSJwWnVmB30mxIqMVLsT6ANN8</string>
+    <string name="start">start</string>
+    <string name="reset">reset</string>
+    <string name="stop">stop</string>
+    <string name="save">save</string>
+    <string name="delete">delete</string>
 </resources>

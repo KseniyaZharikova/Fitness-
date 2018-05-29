@@ -19,13 +19,14 @@ public class InformationModel extends RealmObject {
 
     private  String distance;
 
-    public long getTime() {
+
+    public String getTime() {
         return time;
     }
 
-    public void setTime(long time) {
+    public void setTime(String time) {
         this.time = time;
     }
 
-    private  long time;
+    private  String time;
 }
