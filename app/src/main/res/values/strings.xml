@@ -6,4 +6,13 @@
     <string name="stop">stop</string>
     <string name="save">save</string>
     <string name="delete">delete</string>
+    <string name="on">on</string>
+    <string name="off">off</string>
+    <string name="discover">Discover</string>
+    <string name="enablediscover">EnableDiscover</string>
+    <string name="enable_discover">enable discover</string>
+    <string name="start_connection">start Connection</string>
+    <string name="couldnotconnect" />
+    <string name="bluetooth" />
+    <string name="bluetoothOff" />
 </resources>

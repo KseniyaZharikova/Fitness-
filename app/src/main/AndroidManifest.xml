@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <application
         android:name=".StartApplication"
@@ -21,6 +23,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
         <meta-data
@@ -29,7 +32,11 @@
 
         <service android:name=".LocationUpdateService" />
 
-        <activity android:name=".ui.ResultActivity"></activity>
+        <activity android:name=".ui.ResultActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".bluetooth.BluetoothActivity"
+            android:screenOrientation="portrait">
+        </activity>
     </application>
 
 </manifest>

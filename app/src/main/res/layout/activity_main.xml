@@ -31,8 +31,8 @@
     <LinearLayout
         android:layout_gravity="center"
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content">
         <Button
             android:id="@+id/start"
             android:layout_width="wrap_content"
@@ -63,9 +63,19 @@
         android:id="@+id/distance"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@color/white"
-
-        android:textSize="24dp" />
+        android:textColor="@color/white" />
+    <TextView
+        android:gravity="center"
+        android:id="@+id/pulse"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white" />
+    <TextView
+        android:gravity="center"
+        android:id="@+id/averge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white" />
 
 
     <LinearLayout
@@ -80,16 +90,14 @@
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
             android:text="Time "
-            android:textColor="@color/white"
-            android:textSize="24dp" />
+            android:textColor="@color/white" />
 
         <Chronometer
             android:id="@+id/chronometer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
-            android:textColor="@color/white"
-            android:textSize="24dp" />
+            android:textColor="@color/white" />
 
 
 

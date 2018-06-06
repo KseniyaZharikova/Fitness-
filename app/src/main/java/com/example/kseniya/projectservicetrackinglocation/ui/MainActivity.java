@@ -25,9 +25,10 @@ import android.widget.Toast;
 
 
 import com.akexorcist.googledirection.util.DirectionConverter;
-import com.betomaluje.miband.MiBand;
 import com.example.kseniya.projectservicetrackinglocation.LocationUpdateService;
 import com.example.kseniya.projectservicetrackinglocation.R;
+import com.example.kseniya.projectservicetrackinglocation.bluetooth.BluetoothActivity;
+import com.example.kseniya.projectservicetrackinglocation.bluetooth.DataHandler;
 import com.example.kseniya.projectservicetrackinglocation.models.InformationModel;
 import com.example.kseniya.projectservicetrackinglocation.utils.AppConstants;
 import com.example.kseniya.projectservicetrackinglocation.utils.PermissionUtils;
@@ -61,9 +62,16 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.sql.Time;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Random;
+import java.util.UUID;
 
 import io.realm.Realm;
+import okhttp3.internal.Util;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
@@ -71,13 +79,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private GoogleMap mGoogleMap;
     Marker mMarker;
-    MiBand  mMiBand =  new MiBand(this);
-    TextView distance;
+    TextView distance, pulse;
     private long lastPause;
     Chronometer chronometer;
     Button start, reset, stop, save;
     private Realm mRealm;
     double myDistance = 0;
+    double k;
 
 
     @Override
@@ -88,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(myToolBar);
         mRealm = Realm.getDefaultInstance();
         distance = findViewById(R.id.distance);
+        pulse = findViewById(R.id.pulse);
         chronometer = findViewById(R.id.chronometer);
         start = findViewById(R.id.start);
         reset = findViewById(R.id.reset);
@@ -109,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .withSelectedColor(getResources().getColor(R.color.material_drawer_dark_background))
                 .withTextColor(getResources().getColor(R.color.white))
                 .withSelectedTextColor(getResources().getColor(R.color.white));
-        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("My progress")
+        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Heart Rates")
                 .withSelectedColor(getResources().getColor(R.color.material_drawer_dark_background))
                 .withTextColor(getResources().getColor(R.color.white))
                 .withSelectedTextColor(getResources().getColor(R.color.white));
@@ -121,8 +130,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                        Intent intent = new Intent(MainActivity.this, ResultActivity.class);
-                        startActivity(intent);
+                        switch ((int) drawerItem.getIdentifier()) {
+                            case 1:
+                                Intent resultActivity = new Intent(MainActivity.this, ResultActivity.class);
+                                startActivity(resultActivity);
+                                break;
+                            case 2:
+                                Intent bluetoothActivity = new Intent(MainActivity.this, BluetoothActivity.class);
+                                startActivity(bluetoothActivity);
+                                break;
+                        }
+
                         return false;
                     }
                 })
@@ -164,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMarker = mGoogleMap.addMarker(options);
         saveRoad(location);
         countDistance();
+        DataHandler.getInstance().getLastValue();
     }
 
     @Override
@@ -183,7 +202,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setEnabled(false);
                 stop.setEnabled(true);
                 chronometer.start();
-
                 break;
             case R.id.reset:
                 save.setEnabled(false);
@@ -196,13 +214,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 start.setEnabled(true);
                 stop.setEnabled(false);
-             //   mService.stopLocationUpdates();
                 break;
 
             case R.id.stop:
                 mService.stopLocationUpdates();
                 lastPause = SystemClock.elapsedRealtime();
                 chronometer.stop();
+                myDistance = k;
+                myDistance = 0;
+
+
                 chronometer.setEnabled(false);
                 chronometer.setEnabled(true);
                 start.setEnabled(true);
@@ -211,11 +232,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setText("continue");
                 break;
             case R.id.save:
+                int nextId;
+                if (Realm.getDefaultInstance().where(InformationModel.class).max("id") != null) {
+                    Number id = Realm.getDefaultInstance().where(InformationModel.class).max("id");
+                    nextId = id.intValue() + 1;
+                } else {
+                    nextId = 0;
+                }
 
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+                String currentDateTime = sdf.format(new Date());
                 mRealm.beginTransaction();
-                InformationModel model = mRealm.createObject(InformationModel.class);
+                InformationModel model = mRealm.createObject(InformationModel.class, nextId);
+                Log.d("id is", "onClick: " + nextId);
                 model.setDistance(distance.getText().toString());
                 model.setTime(chronometer.getText().toString());
+                model.setCurrentTimeDate(currentDateTime.toString());
+                model.setRate(DataHandler.getInstance().getLastIntValue());
+
+
                 mRealm.commitTransaction();
                 mService.stopLocationUpdates();
                 Toast.makeText(this, "Save results ", Toast.LENGTH_LONG).show();
@@ -309,10 +344,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void drawRoute(ArrayList<Location> routeList) {
         ArrayList<LatLng> latLngs = new ArrayList<>();
+
         for (Location location : routeList) {
             latLngs.add(new LatLng(location.getLatitude(), location.getLongitude()));
-
         }
+
+
         PolylineOptions options = DirectionConverter.createPolyline(this, latLngs
                 , 5, Color.parseColor("#303F9F"));
 
@@ -320,11 +357,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void countDistance() {
+
         for (int i = 0; i < mWalkedList.size() - 1; i++) {
-            myDistance += mWalkedList.get(i).distanceTo(mWalkedList.get(i + 1));
+            myDistance += mWalkedList.get(i).distanceTo(mWalkedList.get(i + 1)) + k / 1000;
         }
         Log.d("5454545", "GET_DISTANCE: " + myDistance);
-        distance.setText(String.format("Distance: %.2f", myDistance / 1000));
+        distance.setText(String.format("Distance: %.2f", myDistance));
     }
 
 
