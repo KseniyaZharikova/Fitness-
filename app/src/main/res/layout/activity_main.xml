@@ -72,7 +72,7 @@
         android:textColor="@color/white" />
     <TextView
         android:gravity="center"
-        android:id="@+id/averge"
+        android:id="@+id/avg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/white" />
@@ -89,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
-            android:text="Time "
+            android:text="Time:"
             android:textColor="@color/white" />
 
         <Chronometer

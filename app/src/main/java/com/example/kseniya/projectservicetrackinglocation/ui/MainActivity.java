@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 
 import com.akexorcist.googledirection.util.DirectionConverter;
+import com.example.kseniya.projectservicetrackinglocation.CoordinateModel;
 import com.example.kseniya.projectservicetrackinglocation.LocationUpdateService;
 import com.example.kseniya.projectservicetrackinglocation.R;
 import com.example.kseniya.projectservicetrackinglocation.bluetooth.BluetoothActivity;
@@ -75,17 +76,16 @@ import okhttp3.internal.Util;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
-    private ArrayList<Location> mWalkedList = new ArrayList<>();
+    private ArrayList<CoordinateModel> mWalkedList = new ArrayList<>();
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private GoogleMap mGoogleMap;
     Marker mMarker;
-    TextView distance, pulse;
+    TextView distance, pulse,avg;
     private long lastPause;
     Chronometer chronometer;
     Button start, reset, stop, save;
     private Realm mRealm;
     double myDistance = 0;
-    double k;
 
 
     @Override
@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mRealm = Realm.getDefaultInstance();
         distance = findViewById(R.id.distance);
         pulse = findViewById(R.id.pulse);
+        avg = findViewById(R.id.avg);
         chronometer = findViewById(R.id.chronometer);
         start = findViewById(R.id.start);
         reset = findViewById(R.id.reset);
@@ -153,7 +154,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 ).build();
     }
 
-
     private void initMap() {
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -178,11 +178,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MarkerOptions options = new MarkerOptions()
                 .position(new LatLng(location.getLatitude(), location.getLongitude()))
                 .icon(BitmapDescriptorFactory.defaultMarker());
-        mGoogleMap.clear();
         mMarker = mGoogleMap.addMarker(options);
         saveRoad(location);
         countDistance();
-        DataHandler.getInstance().getLastValue();
     }
 
     @Override
@@ -202,16 +200,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setEnabled(false);
                 stop.setEnabled(true);
                 chronometer.start();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pulse.setText(DataHandler.getInstance().getLastValue());
+                        avg.setText(DataHandler.getInstance().getMin() + "   "+
+                                DataHandler.getInstance().getAvg() + "   "+
+                                DataHandler.getInstance().getMax());
+                    }
+                });
                 break;
             case R.id.reset:
+                mService.stopLocationUpdates();
                 save.setEnabled(false);
                 start.setText("start");
-                mWalkedList.clear();
                 myDistance = 0;
+                mWalkedList.clear();
                 chronometer.stop();
                 chronometer.setBase(SystemClock.elapsedRealtime());
                 lastPause = 0;
-
+                distance.setText("Distance:  0,00");
                 start.setEnabled(true);
                 stop.setEnabled(false);
                 break;
@@ -220,9 +228,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mService.stopLocationUpdates();
                 lastPause = SystemClock.elapsedRealtime();
                 chronometer.stop();
-                myDistance = k;
-                myDistance = 0;
-
+                mWalkedList.get(mWalkedList.size() - 1).setStop(true);
 
                 chronometer.setEnabled(false);
                 chronometer.setEnabled(true);
@@ -261,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void saveRoad(Location location) {
-        mWalkedList.add(location);
+        mWalkedList.add((new CoordinateModel(location)));
         drawRoute(mWalkedList);
     }
 
@@ -336,13 +342,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void enableMyLocation() {
         if (PermissionUtils.checkLocationPermission(this) && mGoogleMap != null) {
             mGoogleMap.setMyLocationEnabled(true);
-            mGoogleMap.setMinZoomPreference(15);
-
         }
 
     }
 
-    private void drawRoute(ArrayList<Location> routeList) {
+    private void drawRoute(ArrayList<CoordinateModel> routeList) {
         ArrayList<LatLng> latLngs = new ArrayList<>();
 
         for (Location location : routeList) {
@@ -357,12 +361,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void countDistance() {
-
+        double myDistance = 0;
         for (int i = 0; i < mWalkedList.size() - 1; i++) {
-            myDistance += mWalkedList.get(i).distanceTo(mWalkedList.get(i + 1)) + k / 1000;
+            if (!mWalkedList.get(i).isStop()) {
+                myDistance += mWalkedList.get(i).distanceTo(mWalkedList.get(i + 1));
+            }
         }
-        Log.d("5454545", "GET_DISTANCE: " + myDistance);
-        distance.setText(String.format("Distance: %.2f", myDistance));
+        Log.d("5454545", "GET_DISTANCE: " + myDistance / 1000);
+        distance.setText(String.format("Distance:   %.2f", myDistance / 1000));
     }
 
 

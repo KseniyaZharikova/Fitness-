@@ -41,6 +41,8 @@ public class LocationUpdateService extends Service implements GoogleApiClient.Co
     private LocationRequest mLocationRequest;
 
     public class LocalBinder extends Binder {
+
+
         public LocationUpdateService getService() {
             return LocationUpdateService.this;
         }

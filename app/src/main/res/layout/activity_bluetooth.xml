@@ -5,17 +5,14 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical"
-    android:layout_marginTop="20dp"
     tools:ignore="MergeRootFrame" >
 
 
     <TextView
-        android:layout_gravity="right"
-        android:textSize="24dp"
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SelectDevice" />
+        android:text="@string/selectDevice" />
 
     <Spinner
         android:id="@+id/spinner1"
@@ -28,9 +25,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:paddingTop="20dp"
-        android:text="Pulse"
+        android:text="rpm"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textSize="24dp" />
+        android:textSize="21dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
