@@ -54,13 +54,13 @@ public class InformationModel extends RealmObject {
 
     private String currentTimeDate;
 
-    public int getRate() {
+    public String getRate() {
         return rate;
     }
 
-    public void setRate(int rate) {
+    public void setRate(String rate) {
         this.rate = rate;
     }
 
-    private  int rate;
+    private  String rate;
 }

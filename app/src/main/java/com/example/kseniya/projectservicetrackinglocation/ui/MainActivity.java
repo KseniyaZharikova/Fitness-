@@ -68,6 +68,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Random;
 import java.util.UUID;
 
@@ -75,7 +77,7 @@ import io.realm.Realm;
 import okhttp3.internal.Util;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener ,Observer {
     private ArrayList<CoordinateModel> mWalkedList = new ArrayList<>();
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private GoogleMap mGoogleMap;
@@ -109,6 +111,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         save.setOnClickListener(this);
         reset.setOnClickListener(this);
         initMap();
+        avg.setText("Sensor");
+        avg.setOnClickListener(this);
 
         AccountHeader headerResult = new AccountHeaderBuilder()
                 .withActivity(this)
@@ -119,11 +123,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .withSelectedColor(getResources().getColor(R.color.material_drawer_dark_background))
                 .withTextColor(getResources().getColor(R.color.white))
                 .withSelectedTextColor(getResources().getColor(R.color.white));
-        PrimaryDrawerItem item2 = new PrimaryDrawerItem().withIdentifier(2).withName("Heart Rates")
-                .withSelectedColor(getResources().getColor(R.color.material_drawer_dark_background))
-                .withTextColor(getResources().getColor(R.color.white))
-                .withSelectedTextColor(getResources().getColor(R.color.white));
-
         new DrawerBuilder()
                 .withActivity(this)
                 .withSliderBackgroundColor(getResources().getColor(R.color.material_drawer_dark_background))
@@ -136,10 +135,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 Intent resultActivity = new Intent(MainActivity.this, ResultActivity.class);
                                 startActivity(resultActivity);
                                 break;
-                            case 2:
-                                Intent bluetoothActivity = new Intent(MainActivity.this, BluetoothActivity.class);
-                                startActivity(bluetoothActivity);
-                                break;
                         }
 
                         return false;
@@ -149,7 +144,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .addDrawerItems(
                         item1,
                         new DividerDrawerItem(),
-                        item2,
                         new SecondaryDrawerItem()
                 ).build();
     }
@@ -178,9 +172,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MarkerOptions options = new MarkerOptions()
                 .position(new LatLng(location.getLatitude(), location.getLongitude()))
                 .icon(BitmapDescriptorFactory.defaultMarker());
+        mGoogleMap.clear();
         mMarker = mGoogleMap.addMarker(options);
+
         saveRoad(location);
         countDistance();
+    }
+    @Override
+    public void update(Observable observable, Object o) {
+        receiveData();
+    }
+    public void receiveData() {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                pulse.setText(DataHandler.getInstance().getLastValue());
+                avg.setText(DataHandler.getInstance().getMin() + "   "+
+                        DataHandler.getInstance().getAvg() + "   "+
+                        DataHandler.getInstance().getMax());
+            }
+        });
     }
 
     @Override
@@ -190,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setText("start");
                 save.setEnabled(false);
                 mService.startLocationUpdates();
+                DataHandler.getInstance().addObserver(this);
                 if (lastPause != 0) {
                     chronometer.setBase(chronometer.getBase() + SystemClock.elapsedRealtime() - lastPause);
                     start.setEnabled(false);
@@ -200,15 +211,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setEnabled(false);
                 stop.setEnabled(true);
                 chronometer.start();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        pulse.setText(DataHandler.getInstance().getLastValue());
-                        avg.setText(DataHandler.getInstance().getMin() + "   "+
-                                DataHandler.getInstance().getAvg() + "   "+
-                                DataHandler.getInstance().getMax());
-                    }
-                });
                 break;
             case R.id.reset:
                 mService.stopLocationUpdates();
@@ -223,7 +225,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 start.setEnabled(true);
                 stop.setEnabled(false);
                 break;
-
+            case R.id.avg:
+                Intent bluetoothActivity = new Intent(MainActivity.this, BluetoothActivity.class);
+                startActivity(bluetoothActivity);
+                break;
             case R.id.stop:
                 mService.stopLocationUpdates();
                 lastPause = SystemClock.elapsedRealtime();
@@ -245,7 +250,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } else {
                     nextId = 0;
                 }
-
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
                 String currentDateTime = sdf.format(new Date());
                 mRealm.beginTransaction();
@@ -254,13 +258,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 model.setDistance(distance.getText().toString());
                 model.setTime(chronometer.getText().toString());
                 model.setCurrentTimeDate(currentDateTime.toString());
-                model.setRate(DataHandler.getInstance().getLastIntValue());
+                model.setRate(avg.getText().toString());
 
-
+                start.setText("start");
                 mRealm.commitTransaction();
                 mService.stopLocationUpdates();
                 Toast.makeText(this, "Save results ", Toast.LENGTH_LONG).show();
                 save.setEnabled(false);
+                mService.stopLocationUpdates();
+                myDistance = 0;
+                mWalkedList.clear();
+                chronometer.stop();
+                chronometer.setBase(SystemClock.elapsedRealtime());
+                lastPause = 0;
+                distance.setText("Distance:  0,00");
                 break;
         }
 
@@ -342,6 +353,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void enableMyLocation() {
         if (PermissionUtils.checkLocationPermission(this) && mGoogleMap != null) {
             mGoogleMap.setMyLocationEnabled(true);
+            mGoogleMap.setMaxZoomPreference(18);
+            mGoogleMap.setMinZoomPreference(15);
         }
 
     }
@@ -372,4 +385,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+
+    protected void onDestroy() {
+        super.onDestroy();
+        DataHandler.getInstance().deleteObserver(this);
+    }
 }

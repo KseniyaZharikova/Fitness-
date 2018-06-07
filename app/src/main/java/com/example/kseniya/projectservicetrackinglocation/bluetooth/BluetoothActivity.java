@@ -14,8 +14,6 @@ import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -26,44 +24,29 @@ import android.widget.Toast;
 
 import com.example.kseniya.projectservicetrackinglocation.R;
 
-
-/**
- * This program connect to a bluetooth polar heart rate monitor and display data
- *
- * @author Marco
- */
 public class BluetoothActivity extends Activity implements OnItemSelectedListener, Observer {
 
     boolean searchBt = true;
     BluetoothAdapter mBluetoothAdapter;
     List<BluetoothDevice> pairedDevices = new ArrayList<>();
-    boolean menuBool = false; //display or not the disconnect option
-    boolean h7 = false; //Was the BTLE tested
-    boolean normal = false; //Was the BT tested
+    boolean menuBool = false;
+    boolean h7 = false;
+    boolean normal = false;
     private Spinner spinner1;
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth);
         DataHandler.getInstance().addObserver(this);
-
-
-        //Verify if device is to old for BTLE
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
 
             Log.i("Main Activity", "old device H7 disbled");
             h7 = true;
         }
 
-        //verify if bluetooth device are enabled
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (DataHandler.getInstance().newValue) {
-            //Verify if bluetooth if activated, if not activate it
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (mBluetoothAdapter != null) {
                 if (!mBluetoothAdapter.isEnabled()) {
@@ -102,10 +85,6 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
         DataHandler.getInstance().deleteObserver(this);
     }
 
-
-    /**
-     * Run on startup to list bluetooth paired device
-     */
     public void listBT() {
         Log.d("Main Activity", "Listing BT elements");
         if (searchBt) {
@@ -113,20 +92,15 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
             final List<String> list = new ArrayList<>();
             list.add("");
             pairedDevices.addAll(mBluetoothAdapter.getBondedDevices());
-            // If there are paired devices
             if (pairedDevices.size() > 0) {
-                // Loop through paired devices
                 for (BluetoothDevice device : pairedDevices) {
-                    // Add the name and address to an array adapter to show in a ListView
                     list.add(device.getName() + "\n" + device.getAddress());
 
                 }
             }
 
             Log.d("dataAdapter", "1: ");
-
-            //Populate drop down
-            spinner1 = (Spinner) findViewById(R.id.spinner1);
+            spinner1 = findViewById(R.id.spinner1);
             final ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_item, list);
             dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -139,9 +113,9 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
                 Log.d("Main Activity", "Listing BTLE elements");
                 final BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
                     public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
-                        if (!list.contains(device.getName() + "\n" + device.getAddress())) {
+                        if (!list.contains(device.getName())) {
                             Log.d("Main Activity", "Adding " + device.getName());
-                            list.add(device.getName() + "\n" + device.getAddress());
+                            list.add(device.getName());
                             dataAdapter.notifyDataSetChanged();
 
                             pairedDevices.add(device);
@@ -167,57 +141,17 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
                 scannerBTLE.start();
             }
 
-//            if (DataHandler.getInstance().getID() != 0 && DataHandler.getInstance().getID() < spinner1.getCount())
-//                spinner1.setSelection(DataHandler.getInstance().getID());
-            Log.d("dataAdapter", "3: ");
-//            dataAdapter.notifyDataSetChanged();
-            Log.d("dataAdapter", "4: ");
+            if (DataHandler.getInstance().getID() != 0 && DataHandler.getInstance().getID() < spinner1.getCount())
+                spinner1.setSelection(DataHandler.getInstance().getID());
+
         }
 
-    }
-
-    /**
-     * When menu button are pressed
-     */
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        Log.d("Main Activity", "Menu pressed");
-        if (id == R.id.action_settings) { //close connection
-            menuBool = false;
-            Log.d("Main Activity", "disable pressed");
-            if (spinner1 != null) {
-                spinner1.setSelection(0);
-            }
-            if (DataHandler.getInstance().getReader() == null) {
-                Log.i("Main Activity", "Disabling h7");
-                DataHandler.getInstance().getH7().cancel();
-                DataHandler.getInstance().setH7(null);
-                h7 = false;
-            } else {
-                Log.i("Main Activity", "Disabling BT");
-                DataHandler.getInstance().getReader().cancel();
-                DataHandler.getInstance().setReader(null);
-                normal = false;
-            }
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
     }
 
     public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-
-        Log.d("dataAdapter", "arg2: " + arg2);
-        Log.d("dataAdapter", "arg3: " + arg3);
         if (arg2 != 0) {
             //Actual work
-                       Log.d("dataAdapter", "6: ");
+            Log.d("dataAdapter", "6: ");
             DataHandler.getInstance().setID(arg2);
             Log.d("dataAdapter", "7: ");
             if (!h7 && ((BluetoothDevice) pairedDevices.toArray()[DataHandler.getInstance().getID() - 1])
@@ -228,13 +162,9 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
                 DataHandler.getInstance().setH7(new H7ConnectThread((BluetoothDevice)
                         pairedDevices.toArray()[DataHandler.getInstance().getID() - 1], this));
                 h7 = true;
-            } else if (!normal && DataHandler.getInstance().getH7() == null) {
+            } else {
+                Toast.makeText(getApplicationContext(), "Already connect", Toast.LENGTH_LONG).show();
 
-                Log.i("Main Activity", "Starting normal");
-                DataHandler.getInstance().setReader(new ConnectThread((BluetoothDevice)
-                        pairedDevices.toArray()[arg2 - 1], this));
-                DataHandler.getInstance().getReader().start();
-                normal = true;
             }
             menuBool = true;
 
@@ -242,32 +172,21 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
 
     }
 
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_settings).setEnabled(menuBool);
-        menu.findItem(R.id.action_settings).setVisible(menuBool);
-        return true;
-    }
 
     public void onNothingSelected(AdapterView<?> arg0) {
 
     }
 
-    /**
-     * Called when bluetooth connection failed
-     */
     public void connectionError() {
 
-        Log.w("Main Activity", "Connection error occured");
-        if (menuBool) {//did not manually tried to disconnect
+        if (menuBool) {
             Log.d("Main Activity", "in the app");
             menuBool = false;
             final BluetoothActivity ac = this;
             runOnUiThread(new Runnable() {
                 public void run() {
                     Toast.makeText(getBaseContext(), getString(R.string.couldnotconnect), Toast.LENGTH_SHORT).show();
-                    //TextView rpm = (TextView) findViewById(R.id.rpm);
-                    //rpm.setText("0 BMP");
-                    Spinner spinner1 = (Spinner) findViewById(R.id.spinner1);
+                    Spinner spinner1 = findViewById(R.id.spinner1);
                     if (DataHandler.getInstance().getID() < spinner1.getCount())
                         spinner1.setSelection(DataHandler.getInstance().getID());
 
@@ -293,29 +212,19 @@ public class BluetoothActivity extends Activity implements OnItemSelectedListene
         receiveData();
     }
 
-    /**
-     * Update Gui with new value from receiver
-     */
     public void receiveData() {
-        //ANALYTIC
-        //t.setScreenName("Polar Bluetooth Used");
-        //t.send(new HitBuilders.AppViewBuilder().build());
-
-
         runOnUiThread(new Runnable() {
             public void run() {
-                //menuBool=true;
-
-                TextView rpm = (TextView) findViewById(R.id.rpm);
+                TextView rpm = findViewById(R.id.rpm);
                 rpm.setText(DataHandler.getInstance().getLastValue());
 
-                TextView min = (TextView) findViewById(R.id.min);
+                TextView min = findViewById(R.id.min);
                 min.setText(DataHandler.getInstance().getMin());
 
-                TextView avg = (TextView) findViewById(R.id.avg);
+                TextView avg = findViewById(R.id.avg);
                 avg.setText(DataHandler.getInstance().getAvg());
 
-                TextView max = (TextView) findViewById(R.id.max);
+                TextView max = findViewById(R.id.max);
                 max.setText(DataHandler.getInstance().getMax());
 
             }

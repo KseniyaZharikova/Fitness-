@@ -12,13 +12,13 @@
     <string name="enablediscover">EnableDiscover</string>
     <string name="enable_discover">enable discover</string>
     <string name="start_connection">start Connection</string>
-    <string name="couldnotconnect" >couldnotconnect</string>
-    <string name="bluetooth" >bluetooth</string>
-    <string name="bluetoothOff" >bluetoothOff</string>
+    <string name="couldnotconnect" >Couldnt connect</string>
+    <string name="bluetooth" >Bluetooth connection </string>
+    <string name="bluetoothOff" > Switch on?</string>
 
     <string name="avg" />
     <string name="max" />
     <string name="min" />
     <string name="rpm" />
-    <string name="selectDevice" />
+    <string name="selectDevice"> Select Device</string>
 </resources>
